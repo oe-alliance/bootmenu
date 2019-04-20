@@ -31,7 +31,7 @@ function printList() {
 		$Path="./".$_GET['open']."/";
 	}
 
-	$FileList = getDirArray($Path,".*img$|.*md5$|.*ird$|.*nfi$|.*tar.gz$|.*zip$");
+	$FileList = getDirArray($Path,"_mmc.zip$");
 
 	if ($FileList) {
 		$Url=$Folder."/".end($FileList);
