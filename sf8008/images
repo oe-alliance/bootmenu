@@ -1,4 +1,3 @@
-"openATV 6.3 enigma2 stable","http://images.mynonpublic.com/openatv/6.3/current.php?open=sf8008"
 "openATV 6.4 enigma2 stable","http://images.mynonpublic.com/openatv/6.4/current.php?open=sf8008"
 "openATV 6.5 enigma2 beta","http://images.mynonpublic.com/openatv/6.5/current.php?open=sf8008"
 "OpenHDF 6.5 enigma2 (new multiboot)","http://v65.hdfreaks.cc/current.php?open=sf8008"
@@ -12,7 +11,6 @@
 "OpenViX 5.x enigma2","http://www.openvix.co.uk/openvix-builds/current.php?open=sf8008"
 "OpenDroid_7.0 enigma2 (new multiboot)","https://opendroid.org/7.0/Octagon/current.php?open=sf8008"
 "pure2 6.5 (new multiboot)","http://www.pur-e2.club/OU/images/6.5/bootmenu/current.php?open=sf8008"
-"OpenPLi_7.2 enigma2","http://downloads.openpli.org/builds/sf8008/openpli-7.2-release-sf8008-20200630_multiboot.zip"
 "OpenPLi 7.x enigma2 (new multiboot)","http://downloads.openpli.org/emmc/sf8008"
 "Octagon Define 6.3 OS V1.05.38 linuxos","http://define-sw.dyndns.tv/octagon/sf8008/octagon_sf8008-v1.05.38_20201225_mmc.zip"
 "Octagon Define 6.3 OS V1.05.37 linuxos","http://define-sw.dyndns.tv/octagon/sf8008/octagon_sf8008-v1.05.37_20201206_mmc.zip"
