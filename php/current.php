@@ -6,7 +6,7 @@ function getDirArray($Path="./",$Filter=".*",$Sorted="True")
 {
 	$handle=opendir($Path);
 	while ($file = readdir($handle)) {
-		if (is_file("$Path/$file") && preg_match("/$Filter/i", $file)) {
+		if (is_file("$Path/$file") && preg_match("/$Filter/i", $file) && strpos($file, "recovery") === false) {
 			$dirArray[] = $file;
 		}
 	}
