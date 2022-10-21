@@ -31,7 +31,7 @@ function printList() {
 		$Path="./".$_GET['open']."/";
 	}
 
-	$FileList = getDirArray($Path,"_mmc.zip$|_usb.zip$");
+	$FileList = getDirArray($Path,"_mmc.zip$|_usb.zip$|_multi.zip$");
 
 	if ($FileList) {
 		$Url=$Folder."/".end($FileList);
