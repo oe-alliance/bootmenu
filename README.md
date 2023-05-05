@@ -23,4 +23,14 @@ Copy STARTUP_LINUX_1, 2, 3 or 4 to STARTUP_LINUX_5, 6 etc, and modify the 'roots
 The kernel will be shared with the linux 1, 2, 3 or 4 image, depending on which startup file you copied. <br />
 <br />
 <br />
+Rules <br />
+All Image Teams are wellcome<br />
+The image must be freely available for the user to download.<br />
+Download server must be available and online, if several times the server is offline the images will be removed.<br />
+Maximum 2 images per team<br />
+Team images should follow each other in the list<br />
+Please place new images always at the end of the list, OE-A can change the sorting at any time, a placement cannot be demanded.<br />
+Please report download errors here in Git so we can remove the download link.<br />
+<br />
+<br />
 
