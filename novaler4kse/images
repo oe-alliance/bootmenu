@@ -1,8 +1,9 @@
 OpenATV_7.3_E2 https://images.mynonpublic.com/openatv/7.3/current.php?open=novaler4kse
 OpenATV_7.4_E2 https://images.mynonpublic.com/openatv/7.4/current.php?open=novaler4kse
+OpenATV_7.5_E2 https://images.mynonpublic.com/openatv/7.5/current.php?open=novaler4kse
 OpenPLi_8.x_E2_current http://downloads.openpli.org/emmc/multiboxse
-EGAMI_10.4_E2_PY_3.11 http://image.egami-image.com/10.4/current.php?open=novaler4kse
 EGAMI_10.5_E2_Current http://image.egami-image.com/10.5/current.php?open=novaler4kse
+EGAMI_10.6_E2_Current http://image.egami-image.com/10.6/current.php?open=novaler4kse
 BackUp_OpenPLi_9.0_SE_20230620 https://novaler.com/uploads/enigmase/openpli/openpli-develop-novaler4kse-backup-20230620_usb.zip
 BackUp_OpenATV_7.4_SE_20230620 https://novaler.com/uploads/enigmase/openatv/openatv-7.4-devel-novaler4kse-backup-20230620_usb.zip
 BackUp_PurE2_7.3_20230625 https://novaler.com/uploads/enigmase/pure2/novaler4kse-PurE2-7.3-novaler4kse-backup-20230625_usb.zip
@@ -12,11 +13,9 @@ BackUp_OpenPLi_8.3_SE_20230607 https://novaler.com/uploads/enigmase/openpli/open
 BackUp_OpenATV_6.4_SE_20230607 https://novaler.com/uploads/enigmase/openatv/openatv-6.4-novaler4kse-backup-20230607_usb.zip
 BackUp_Egami_9.0.6_SE_20230608 https://novaler.com/uploads/enigmase/egami/egami-9.0.6-novaler4kse-backup-20230610_usb.zip
 BackUp_PurE2_6.5_SE_20230607 https://novaler.com/uploads/enigmase/pure2/pure2-6.5-novaler4kse-backup-20230607_usb.zip
-BackUp_TeamBlue_6.4_SE_20230610 https://novaler.com/uploads/enigmase/teamblue/teamblue-6.4-novaler4kse-backup-20230610_usb.zip
 BackUp_Cobralibero_SE_20230610 https://novaler.com/uploads/enigmase/cobralibero/cobraliberosat-Team-novaler4kse-backup-20230610_usb.zip
 BackUp_Nonsolosat-28_SE_20230607 https://novaler.com/uploads/enigmase/nonsolosat/Nonsolosat-28-novaler4kse-backup-20230607_usb.zip
 BackUp_OpenEight_6.8_SE_20230608 https://novaler.com/uploads/enigma/openeight/openeight-6.8-novaler4kse-backup-20230608_usb.zip
 RECOVERY_CORRECTOR_V7_SE https://novaler.com/uploads/flashes/novaler4k-multibox4k-se-20230114_recovery_emmc_v7.zip
 BackUp_BOOT5-OpenPLi_9.0 https://novaler.com/uploads/enigmase/boot5/openpli-9.0-multibox4kse-boot5.zip
 BackUp_BOOT5-OpenPLi_8.3 https://novaler.com/uploads/enigmase/boot5/openpli-8.3-multibox4kse-boot5.zip
-
