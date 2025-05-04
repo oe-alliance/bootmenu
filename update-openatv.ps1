@@ -15,7 +15,7 @@ function Manipulate-TextFile {
             $modifiedContent += $line
 
             if ($line -match 'OpenATV_7\.4_E2|"openATV 7\.4 enigma2"|OpenATV_7\.4_enigma2') {
-                $modifiedContent += $line -replace '7\.4', '7.5.1'
+                $modifiedContent += $line -replace '7\.4', '7.6'
                 $changed = $true
             }
         }
