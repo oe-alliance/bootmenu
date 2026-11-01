@@ -1,0 +1,5 @@
+# ODR firmware catalogue v1
+# TYPE VERSION_OR_LABEL BYTES SHA256 HTTPS_URL
+# U-Boot has no release version; original is a label, identified by SHA256.
+frontprocessor 1.15 547608 f290ddf205a2f2e18a2b55df6336385fda828bd18a8676b6111fa8ab916ebbd0 https://raw.githubusercontent.com/oe-alliance/bootmenu/master/releases/download/dreambox-firmware-1/central-one-noreset-220114-1.15.hex
+bootloader original 1655296 430990893f1de7984a017767ab6bc4a9086ed429a45d15930ace1773914c7fda https://raw.githubusercontent.com/oe-alliance/bootmenu/master/releases/download/dreambox-firmware-1/u-boot-dreamone.bin
