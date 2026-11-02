@@ -8,14 +8,14 @@ umask 077
 die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
 usage() {
 	cat <<'HELP'
-Install Open Dream Rescue from the running Dreambox One or Two image.
+Install Open Dream Rescue from the running image on a Dreambox One, Two, DM520/DM525/DM520mini, DM7080, DM820, DM900 or DM920.
   sh install-odr.sh [--check | --yes] [--backup-dir DIRECTORY] [--odr-only]
 Default: check downloads, show the plan and ask before installing.
 --check       Download and check only. Do not program either device.
 --yes         Apply the checked plan without an interactive prompt.
 --backup-dir  Save the complete old recovery partition here (default:
               /home/root/odr-backups). A mounted USB directory also works.
---odr-only    Install rescue without updating the front processor.
+--odr-only    Skip the front processor on One and Two. Broadcom models install rescue only.
 The installer also accepts a download piped to sh. Run as root in the installed image.
 It asks for confirmation in your terminal and leaves the receiver running.
 HELP
@@ -57,9 +57,10 @@ transfer() (
 )
 catalogue() {
 	trust=verified
-	if ! transfer "$base/dream$model/$1" "$tmp/list" 16384 verified; then
+	case "$model" in one|two) catalogue_dir=dream$model ;; *) catalogue_dir=$model ;; esac
+	if ! transfer "$base/$catalogue_dir/$1" "$tmp/list" 16384 verified; then
 		trust=pinned
-		transfer "$base/dream$model/$1" "$tmp/list" 16384 pinned || die "Cannot download dream$model/$1 from GitHub. Check network, DNS, date and HTTPS support in this image."
+		transfer "$base/$catalogue_dir/$1" "$tmp/list" 16384 pinned || die "Cannot download $catalogue_dir/$1 from GitHub. Check network, DNS, date and HTTPS support in this image."
 	fi
 	[ "$(wc -c < "$tmp/list")" -le 16384 ] || die "Catalogue too large"
 	awk -v kind="$2" '{
@@ -76,15 +77,18 @@ catalogue() {
 payload() {
 	# Even with expired system CAs, a digest known independently of the
 	# network remains usable. Future rescue releases need verified HTTPS.
-	if [ "$trust" = pinned ] && [ "$digest" != "$2" ] && [ "$digest" != "${3:-}" ] && [ "$digest" != "${4:-}" ] && [ "$digest" != "${5:-}" ]; then
-		die "This release is not pinned for this model. Use a matching installer or a verified online catalogue."
+	payload_file=$1
+	shift
+	if [ "$trust" = pinned ]; then
+		while [ "$#" -gt 0 ] && [ "$1" != "$digest" ]; do shift; done
+		[ "$#" -gt 0 ] || die "This release is not pinned for this model. Use a matching installer or a verified online catalogue."
 	fi
-	if ! transfer "$url" "$1" "$bytes" verified; then
+	if ! transfer "$url" "$payload_file" "$bytes" verified; then
 		# The expected digest is now either locally pinned or authenticated.
-		transfer "$url" "$1" "$bytes" pinned || die "Cannot download $url. Check network, DNS, date and HTTPS support in this image."
+		transfer "$url" "$payload_file" "$bytes" pinned || die "Cannot download $url. Check network, DNS, date and HTTPS support in this image."
 	fi
-	[ "$(wc -c < "$1")" -eq "$bytes" ] || die "Downloaded payload has the wrong size"
-	actual=$(sha256sum "$1") || die "Cannot hash the downloaded file"
+	[ "$(wc -c < "$payload_file")" -eq "$bytes" ] || die "Downloaded payload has the wrong size"
+	actual=$(sha256sum "$payload_file") || die "Cannot hash the downloaded file"
 	[ "${actual%% *}" = "$digest" ] || die "Downloaded payload has the wrong SHA-256"
 }
 confirm_plan() {
@@ -96,8 +100,118 @@ confirm_plan() {
 	esac
 	case "$answer" in y|Y|yes|YES) return 0 ;; *) return 1 ;; esac
 }
+check_spi_target() {
+	[ "$(cat /proc/stb/info/model)" = "$receiver" ] &&
+	{ [ "$model" != dm520 ] || [ "$(cat /proc/stb/info/mid)" = 21 ]; } &&
+	[ "$(cat "$spi_sys/name")" = "$spi_name" ] &&
+	[ "$(cat "$spi_sys/type")" = nor ] &&
+	[ "$(cat "$spi_sys/size")" = "$((spi_size+spi_offset))" ] &&
+	[ "$(cat "$spi_sys/erasesize")" = 65536 ] &&
+	[ "$(stat -L -c '%t:%T' "$spi_read")" = "$spi_devno" ] &&
+	{ if [ "$model" = dm7080 ] || [ "$model" = dm820 ]; then [ -b "$spi_read" ]; else [ -c "$spi_read" ]; fi; } ||
+		die "Cannot identify the $model SPI rescue partition"
+	[ -x "$spi_writer" ] || die "Dream's writespi utility is missing from this image"
+}
+check_spi_image() {
+	# Both the original Python 2 DreamOS and current Python 3 images provide zlib.
+	"$python" - "$tmp/odr" "$model" <<'PY'
+from re import escape, search
+from struct import unpack_from
+from sys import argv, exit
+from zlib import decompressobj
+
+with open(argv[1], "rb") as image:
+	data = image.read()
+offset = data.find(b"\x1f\x8b\x08")
+mips = argv[2] in ("dm520", "dm7080", "dm820")
+if mips:
+	if offset != 0:
+		exit("Invalid MIPS rescue gzip header")
+else:
+	magic, start, end = unpack_from("<III", data, 36)
+	if magic != 0x016f2818 or end - start != len(data) or offset < 0:
+		exit("Invalid ARM rescue kernel header")
+stream = decompressobj(31)
+limit = 64 << 20
+kernel = stream.decompress(data[offset:] + b"\0", limit + 1)
+if mips and (not kernel.startswith(b"\x7fELF\x01\x01\x01") or unpack_from("<HH", kernel, 16) != (2, 8)):
+	exit("Invalid MIPS rescue ELF")
+model = escape(argv[2].encode("ascii"))
+banner = br"Linux version [^\s\x00]+-" + model + br" \(odr-" + model + br"@rescue\) "
+if len(kernel) > limit or not stream.unused_data or not search(banner, kernel):
+	exit("The kernel is not an ODR rescue build for this receiver")
+PY
+}
+spi_digest() {
+	"$python" - "$spi_read" "${1:-$bytes}" "$model" "$spi_offset" <<'PY'
+from fcntl import ioctl
+from hashlib import sha256
+from sys import argv, exit
+
+size = int(argv[2])
+with open(argv[1], "rb") as device:
+	if argv[3] in ("dm7080", "dm820"):
+		# writespi accesses NOR outside the MTD block cache. MIPS BLKFLSBUF.
+		ioctl(device.fileno(), 0x20001261, 0)
+	device.seek(int(argv[4]))
+	data = device.read(size)
+if len(data) != size:
+	exit("Incomplete SPI rescue read")
+print(sha256(data).hexdigest())
+PY
+}
+install_spi() {
+	spi_writer=/usr/sbin/writespi
+	spi_offset=0
+	case "$model" in
+		dm520) spi_sys=/sys/class/mtd/mtd3; spi_read=/dev/mtd3ro; spi_offset=3145728; spi_size=13631488; spi_devno=5a:7; spi_name=spi0.0 ;;
+		dm7080|dm820) spi_sys=/sys/class/mtd/mtd2; spi_read=/dev/mtdblock2; spi_size=15728640; spi_devno=1f:2; spi_name=recovery ;;
+		dm900|dm920) spi_sys=/sys/class/mtd/mtd3; spi_read=/dev/mtd3ro; spi_size=14417920; spi_devno=5a:7; spi_name=flash0.recovery ;;
+		*) die "Unsupported SPI receiver: $model" ;;
+	esac
+	awk '$2=="/" && $3!="rootfs" && $3!="ramfs" && $3!="tmpfs" && $1!~/^\/dev\/ram/ {ok=1} END{exit !ok}' /proc/mounts ||
+		die 'Run this installer in the installed Linux image'
+	for python in python3 python2 python; do command -v "$python" >/dev/null 2>&1 && break; done
+	command -v "$python" >/dev/null 2>&1 || die 'Python with zlib is required to check the rescue kernel'
+	check_spi_target
+	catalogue rescue rescue
+	[ "$bytes" -le "$spi_size" ] || die 'The rescue image exceeds the SPI partition size'
+	# spi_pins is the build-time list of SHA-256 hashes for this receiver.
+	payload "$tmp/odr" $spi_pins
+	check_spi_image || die "Rescue kernel check failed for $model"
+	printf 'Dreambox %s: verified ODR %s (%s bytes) for %s.\n' "$model" "$version" "$bytes" "$spi_name"
+	installed=$(spi_digest) || die 'Cannot read the internal rescue'
+	if [ "$installed" = "$digest" ]; then echo 'This exact rescue is already installed.'; return; fi
+	if [ "$mode" = check ]; then echo 'Update available. Check complete. No hardware was written.'; return; fi
+	printf 'Back up the original rescue to %s and update the internal SPI rescue. Keep power connected.\n' "$backup"
+	if [ "$mode" != yes ] && ! confirm_plan; then echo 'Cancelled. No hardware was written.'; return; fi
+	check_spi_target
+	mkdir -p "$backup" || die 'Cannot create backup directory'
+	folder=$(mktemp -d "$backup/$model-rescue-$(date +%Y%m%d-%H%M%S)-XXXXXX") || die 'Cannot create a private backup directory'
+	dd if="$spi_read" of="$folder/recovery.partial" bs=65536 skip="$((spi_offset/65536))" count="$((spi_size/65536))" || die 'Cannot back up the internal rescue'
+	[ "$(wc -c < "$folder/recovery.partial")" -eq "$spi_size" ] || die 'Incomplete rescue backup'
+	old=$(spi_digest "$spi_size") || die 'Cannot read the internal rescue'
+	actual=$(sha256sum "$folder/recovery.partial") || die 'Cannot read the rescue backup'
+	[ "${actual%% *}" = "$old" ] || die 'Original rescue backup verification failed'
+	mv "$folder/recovery.partial" "$folder/recovery.bin"
+	printf '%s  recovery.bin\n' "$old" > "$folder/SHA256SUMS"
+	sync
+	printf 'Original rescue backup verified: %s/recovery.bin\n' "$folder"
+	trap '' HUP INT TERM QUIT
+	echo 'Writing and verifying the internal SPI rescue. Keep power connected.'
+	if "$spi_writer" "$tmp/odr" kernel && actual=$(spi_digest) && [ "$actual" = "$digest" ]; then
+		echo 'Internal ODR written and verified. It will run the next time you start internal rescue.'
+		return
+	fi
+	if actual=$(spi_digest "$spi_size") && [ "$actual" = "$old" ]; then die 'Update failed. The original rescue is intact.'; fi
+	echo 'Update failed. Restoring the verified original rescue.'
+	if "$spi_writer" "$folder/recovery.bin" kernel && actual=$(spi_digest "$spi_size") && [ "$actual" = "$old" ]; then
+		die 'Update failed. Previous rescue restored and verified.'
+	fi
+	die "Rescue could not be restored. Keep the box powered. Verified backup: $folder/recovery.bin"
+}
 main() {
-	mode=ask; fp=yes; backup=/home/root/odr-backups
+	mode=ask; fp=yes; backup=/home/root/odr-backups; storage=amlogic
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
 			--help|-h) usage; exit 0 ;;
@@ -110,15 +224,51 @@ main() {
 	done
 	case "$backup" in /*) ;; *) die 'Backup directory must be an absolute path' ;; esac
 	[ "$(id -u)" = 0 ] || die 'Run as root in the installed Linux image'
-	[ ! -e /etc/odr-rescue ] || die 'In ODR use Maintenance > Device firmware instead'
-	for tool in sha256sum base64 awk sed mktemp wc; do
+	[ ! -e /etc/odr-dm520 ] && [ ! -e /etc/odr-rescue ] && [ ! -e /etc/odr-dm7080 ] && [ ! -e /etc/odr-dm820 ] && [ ! -e /etc/odr-dm900 ] && [ ! -e /etc/odr-dm920 ] || die 'In ODR use Maintenance > Device firmware instead'
+	for tool in sha256sum awk mktemp wc; do
 		command -v "$tool" >/dev/null 2>&1 || die "Required tool missing from the running image: $tool"
 	done
 	if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then
 		die 'Install curl or wget with HTTPS support in the running image.'
 	fi
-	model=$(cat /proc/stb/info/model) || die 'Cannot read the Dreambox model'
-	case "$model" in
+	receiver=$(cat /proc/stb/info/model) || die 'Cannot read the Dreambox model'
+	model=$receiver
+	case "$receiver" in
+		dm520|dm525|dm520mini) model=dm520; storage=spi; spi_pins='93eff6eb62d6e7a720595c08bbfea0c9b5fda8334a7d320abc5d12c97eab905a' ;;
+		dm7080) storage=spi
+		        spi_pins='9af211e86432da6dcf7b36d03145e2d983b35447dc9f4261917e48785b04bd86
+		                  cffab34730ee724b444d55df5b8072af26d51ef593a410e6bf27149d8bfb2dc4
+		                  547a329156d9c6d26f0bf1fba73303472c2e15eeb5af327d8ca41de30d1970ad
+		                  b15197a995361e3cf994da201d7b7c98e32663171c6e829d9d8b547fe21b7a3d
+		                  239cbd04acec45b81b153db4b951c0a3138133f40498b237ffebc8019c4db0b5
+		                  1021f62214eccfd54ff6cd2cc0707a25e5d65efe4b860a4c4094e1865fc59dc8
+		                  8ea19cb8c3068d0fcdafe98005574b7dc657a11ead816026a6e886669d800176
+		                  5621edc93c4311e1549cbbca1e9ea6b66369b4e2e52caee9b7b56463f3a2c57f
+		                  186a6568ede90a241811443b09ad5fc261a93873520b68477c5d3ec0b026c6e3
+		                  d54dd8d97ff14f54af442d484e742046fb2e7021d77fe375acd3c884ed370995' ;;
+		dm820) storage=spi
+		       spi_pins='66e59e3d43fd8ef3e90ae824c875d93216f58893551f7cc81d82d3e498f4cddc
+		                 558e063d40dc5187ff917571f00201b19e2fd13bfd55d8bc5b3dbf773ba61ee0' ;;
+		dm900) storage=spi
+		       spi_pins='812290d541cff72daff7665f45367a23b06e1c1ef3484e8ef9502b65c0dacddb
+		                 7683cf8b36def41d484100ee171b8322e268d643d062a75a5744120a59b56b4b
+		                 b3101f9692af19cc103326b75ee6b3611675f326da67f30dfd40386dd74b97d6
+		                 8eb5ab8ef895396bdc43a77ecfea851fa695734b81c03c2d78eb0c3724718d5a
+		                 8662f2ac53321ee4a2cb923dfe3617a4d32f64aa2f100d85fe1840e9e786525a
+		                 75cb59036ff55521510646accb25fbb06ec473b72292b11ed1a6798e19c09765
+		                 bca7a869115c634d77e97d74c7050ce339985bd5422573a1cc89a50ae1daf912
+		                 088a3c2acd2396f2f26e0288f2ada973a8162021138ee686a2bdeec61224a1d0' ;;
+		dm920) storage=spi
+		       spi_pins='aa3ce0bf4d11bd7fd40a2409ce0ae8c7b89dc55255fce5be411bec47235b86d8
+		                 62c1ebdbf22371b738aadaa78b6f1b59742aaed88404712fa1b43d1d1940d101
+		                 1d18be072649c75d50ecf7523a80a8b70c70b0e3f55786a070df3e4772b7294a
+		                 e7b3b5b41deb8d6a5406db27ef11caeb3a326dbb032b4258fa341a891898cbd0
+		                 2798da3e5e561b2d4e3311be323ff3da796828311e3597212be5303a05c89ebf
+		                 916936dc5361a8d35c63e66cace18ef72100258e5efa2d14602fba8dfb8e510a
+		                 ad4597b5113b46fb74862bea563b747fe3cac755bb3d7e88bb0b13d4d9ae6d8f
+		                 4fdfd0e5838eaf79224869e6fa9591350c762a7d5ef64cc635f9ece15f1b9f48
+		                 a60724691a60497e046908825370326967f8c8944ed6148ad5c23c38f34cd6d2
+		                 518689a61d832b9e869991874f06d3afc4781b84783191c76c6d48ae550b96f4' ;;
 		one) v39pin=2405c977980a980ab982a633056f7e5ef71768ba65b795de51277fdc6f3daade
 		     v38pin=0912d7dae4820ac59ee8d232367b65db494f4760b2fc6feb6e833e7cbf54797c; nextpin=a541ea7465fd6dfa987ab4718c941a811995db8d94bf48a6057869976ba46e01; pin=c9caee39e793f2fdc21758e47418d43a57ed40af5244f06fc96dffe240a681f4
 		     fpver=1.15; fppin=f290ddf205a2f2e18a2b55df6336385fda828bd18a8676b6111fa8ab916ebbd0; fpalt=cdc3043abb9be9fdf81f4a5e06d609735721c6c004555af0a0f82b2e22aafb63 ;;
@@ -127,12 +277,14 @@ main() {
 		     fpver=1.14; fppin=5e379805f4961b69cd549e2d5742d97115409a93fb2e25800c0ef24022c14ce5; fpalt=7dac304e7bed79438ca6935693533386f1759e41df8406621d46b84b6ebb1c0c ;;
 		*) die "Unsupported receiver: $model";;
 	esac
-	cid=$(cat /sys/block/mmcblk0/device/cid) || die 'Cannot identify the internal eMMC'
 	mkdir /run/odr-image-install.lock || die 'Another installer is active (a reboot clears a stale lock)'
 	tmp=
 	trap 'if [ -n "$tmp" ]; then rm -f "$tmp/helper" "$tmp/odr" "$tmp/front.hex" "$tmp/list" "$tmp/entry"; rmdir "$tmp" || :; fi; rmdir /run/odr-image-install.lock || :' EXIT
 	trap 'exit 1' HUP INT TERM
 	tmp=$(mktemp -d /tmp/odr-install.XXXXXX) || die 'Cannot create private workspace'
+	if [ "$storage" = spi ]; then install_spi; return; fi
+	command -v base64 >/dev/null 2>&1 || die 'Required tool missing from the running image: base64'
+	cid=$(cat /sys/block/mmcblk0/device/cid) || die 'Cannot identify the internal eMMC'
 	unpack_helper > "$tmp/helper" || die 'Cannot unpack the installer'
 	actual=$(sha256sum "$tmp/helper"); [ "${actual%% *}" = '9afe74fbf86f949d2c6d5054b1e163fdf0bfe4a9f2eb4488071fa19788453cf2' ] || die 'Installer is incomplete or damaged'
 	chmod 700 "$tmp/helper"; helper=$tmp/helper
