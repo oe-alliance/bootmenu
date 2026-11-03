@@ -234,7 +234,8 @@ main() {
 	receiver=$(cat /proc/stb/info/model) || die 'Cannot read the Dreambox model'
 	model=$receiver
 	case "$receiver" in
-		dm520|dm525|dm520mini) model=dm520; storage=spi; spi_pins='b8930437225780974a774eaf1fa755fa785ff5448a335b01f071cddfdafdec96
+		dm520|dm525|dm520mini) model=dm520; storage=spi; spi_pins='08a3ae15854ae3a120aaf55428dec9ee6e90dcf91ffc4f1589d011bd10fdedfd
+          b8930437225780974a774eaf1fa755fa785ff5448a335b01f071cddfdafdec96
           93eff6eb62d6e7a720595c08bbfea0c9b5fda8334a7d320abc5d12c97eab905a' ;;
 		dm7080) storage=spi
 		        spi_pins='ba980fdd67c0138ee62ed2389ce7838a4606229d6163512a4e8ee24c37cbe5af
