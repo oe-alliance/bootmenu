@@ -234,9 +234,11 @@ main() {
 	receiver=$(cat /proc/stb/info/model) || die 'Cannot read the Dreambox model'
 	model=$receiver
 	case "$receiver" in
-		dm520|dm525|dm520mini) model=dm520; storage=spi; spi_pins='93eff6eb62d6e7a720595c08bbfea0c9b5fda8334a7d320abc5d12c97eab905a' ;;
+		dm520|dm525|dm520mini) model=dm520; storage=spi; spi_pins='b8930437225780974a774eaf1fa755fa785ff5448a335b01f071cddfdafdec96
+          93eff6eb62d6e7a720595c08bbfea0c9b5fda8334a7d320abc5d12c97eab905a' ;;
 		dm7080) storage=spi
-		        spi_pins='9af211e86432da6dcf7b36d03145e2d983b35447dc9f4261917e48785b04bd86
+		        spi_pins='ba980fdd67c0138ee62ed2389ce7838a4606229d6163512a4e8ee24c37cbe5af
+		                  9af211e86432da6dcf7b36d03145e2d983b35447dc9f4261917e48785b04bd86
 		                  cffab34730ee724b444d55df5b8072af26d51ef593a410e6bf27149d8bfb2dc4
 		                  547a329156d9c6d26f0bf1fba73303472c2e15eeb5af327d8ca41de30d1970ad
 		                  b15197a995361e3cf994da201d7b7c98e32663171c6e829d9d8b547fe21b7a3d
@@ -247,10 +249,12 @@ main() {
 		                  186a6568ede90a241811443b09ad5fc261a93873520b68477c5d3ec0b026c6e3
 		                  d54dd8d97ff14f54af442d484e742046fb2e7021d77fe375acd3c884ed370995' ;;
 		dm820) storage=spi
-		       spi_pins='66e59e3d43fd8ef3e90ae824c875d93216f58893551f7cc81d82d3e498f4cddc
+		       spi_pins='a518cee1b3656f5da4a5beb7143731a5d7858aee36361dcdbdb83faa96bf91bf
+		                 66e59e3d43fd8ef3e90ae824c875d93216f58893551f7cc81d82d3e498f4cddc
 		                 558e063d40dc5187ff917571f00201b19e2fd13bfd55d8bc5b3dbf773ba61ee0' ;;
 		dm900) storage=spi
-		       spi_pins='812290d541cff72daff7665f45367a23b06e1c1ef3484e8ef9502b65c0dacddb
+		       spi_pins='d2fca43da0592d114a2405127f1ad80deefb07726903216fe9569056c0c3cf70
+		                 812290d541cff72daff7665f45367a23b06e1c1ef3484e8ef9502b65c0dacddb
 		                 7683cf8b36def41d484100ee171b8322e268d643d062a75a5744120a59b56b4b
 		                 b3101f9692af19cc103326b75ee6b3611675f326da67f30dfd40386dd74b97d6
 		                 8eb5ab8ef895396bdc43a77ecfea851fa695734b81c03c2d78eb0c3724718d5a
@@ -259,7 +263,8 @@ main() {
 		                 bca7a869115c634d77e97d74c7050ce339985bd5422573a1cc89a50ae1daf912
 		                 088a3c2acd2396f2f26e0288f2ada973a8162021138ee686a2bdeec61224a1d0' ;;
 		dm920) storage=spi
-		       spi_pins='aa3ce0bf4d11bd7fd40a2409ce0ae8c7b89dc55255fce5be411bec47235b86d8
+		       spi_pins='081ba08f9212991538515d2f00e4f9b0659f779802581304597d036eafccf0b9
+		                 aa3ce0bf4d11bd7fd40a2409ce0ae8c7b89dc55255fce5be411bec47235b86d8
 		                 62c1ebdbf22371b738aadaa78b6f1b59742aaed88404712fa1b43d1d1940d101
 		                 1d18be072649c75d50ecf7523a80a8b70c70b0e3f55786a070df3e4772b7294a
 		                 e7b3b5b41deb8d6a5406db27ef11caeb3a326dbb032b4258fa341a891898cbd0
@@ -269,10 +274,10 @@ main() {
 		                 4fdfd0e5838eaf79224869e6fa9591350c762a7d5ef64cc635f9ece15f1b9f48
 		                 a60724691a60497e046908825370326967f8c8944ed6148ad5c23c38f34cd6d2
 		                 518689a61d832b9e869991874f06d3afc4781b84783191c76c6d48ae550b96f4' ;;
-		one) v39pin=2405c977980a980ab982a633056f7e5ef71768ba65b795de51277fdc6f3daade
+		one) v40pin=e7e54763a232cd82330a88b43808cde2b2f42363970f43581ccbde26166a282b; v39pin=2405c977980a980ab982a633056f7e5ef71768ba65b795de51277fdc6f3daade
 		     v38pin=0912d7dae4820ac59ee8d232367b65db494f4760b2fc6feb6e833e7cbf54797c; nextpin=a541ea7465fd6dfa987ab4718c941a811995db8d94bf48a6057869976ba46e01; pin=c9caee39e793f2fdc21758e47418d43a57ed40af5244f06fc96dffe240a681f4
 		     fpver=1.15; fppin=f290ddf205a2f2e18a2b55df6336385fda828bd18a8676b6111fa8ab916ebbd0; fpalt=cdc3043abb9be9fdf81f4a5e06d609735721c6c004555af0a0f82b2e22aafb63 ;;
-		two) v39pin=302d3d2b4137baf49dcca7357f8ab46f7d7e96b57805e06d2fc89f5736ce9b4b
+		two) v40pin=f47dc606b2edd23794a3386d76dea8f1e7a6f3ab495498d86cf6810fdd04ea55; v39pin=302d3d2b4137baf49dcca7357f8ab46f7d7e96b57805e06d2fc89f5736ce9b4b
 		     v38pin=d4bd16b6443d01b9c506a896d2f1cb08b0d5ef83c6610d12d87b8f00b16dde34; nextpin=33396dc9d73f2898f507a731fbd1d5bcf6957e33bc742c169621f1bb4ea4bc0e; pin=05b8e83429f0f5a338f65b56f49d518ab8f84d829b94ab30bbf5e71c7941198e
 		     fpver=1.14; fppin=5e379805f4961b69cd549e2d5742d97115409a93fb2e25800c0ef24022c14ce5; fpalt=7dac304e7bed79438ca6935693533386f1759e41df8406621d46b84b6ebb1c0c ;;
 		*) die "Unsupported receiver: $model";;
@@ -290,7 +295,7 @@ main() {
 	chmod 700 "$tmp/helper"; helper=$tmp/helper
 	echo "Dreambox $model: checking the online internal rescue release..."
 	catalogue rescue rescue
-	payload "$tmp/odr" "$pin" "$nextpin" "$v38pin" "$v39pin"
+	payload "$tmp/odr" "$pin" "$nextpin" "$v38pin" "$v39pin" "$v40pin"
 	rescue_size=$bytes; rescue_sha=$digest
 	printf 'Rescue: ODR %s (%s bytes)\n' "$version" "$bytes"
 	"$helper" check "$model" "$tmp/odr" "$rescue_size" "$rescue_sha" "$cid" || exit 1
